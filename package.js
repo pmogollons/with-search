@@ -20,7 +20,7 @@ Package.onUse(function (api) {
     "ecmascript",
     "mongo",
     "zodern:types@1.0.13",
-    "pmogollons:collection-hooks",
+    "pmogollons:collection-hooks@1.0.5",
   ];
 
   api.use(packages);
