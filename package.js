@@ -1,6 +1,6 @@
 Package.describe({
   name: "pmogollons:with-search",
-  version: "1.0.0",
+  version: "1.0.1",
   summary: "Adds a searchText field to collections",
   git: "https://github.com/pmogollons/with-search",
   documentation: "README.md",

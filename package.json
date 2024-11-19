@@ -1,6 +1,6 @@
 {
   "name": "with-search",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Adds a searchText field to collections",
   "scripts": {
     "test": "meteor test-packages --port 3558 ./ --driver-package test-in-browser",
