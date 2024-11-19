@@ -5,7 +5,10 @@ declare module "meteor/mongo" {
     interface Collection<T, U = T> {
       withSearch(options: {
         fields: string[];
-        index?: boolean;
+        deps?: {
+          collection: Collection<any>;
+          docFields: Record<string, any>;
+        }[];
       }): Collection<T, U>;
       syncSearchTextFields(): Promise<void>;
     }

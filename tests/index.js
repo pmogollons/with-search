@@ -4,13 +4,20 @@ import { Tinytest } from "meteor/tinytest";
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const Contacts = new Mongo.Collection("contacts");
 const Organizations = new Mongo.Collection("organizations");
+
 Organizations.withSearch({
   fields: ["name", "miaw", "owner.name", "contacts.$.name"],
-  hasLinks: true,
+  deps: [{
+    collection: Contacts,
+    docFields: {
+      contact: {
+        _id: true,
+      },
+    },
+  }],
 });
-
-const Contacts = new Mongo.Collection("contacts");
 
 
 Organizations.addLinks({
@@ -63,4 +70,15 @@ Tinytest.addAsync("WithSearch - searchText is set with links", async function (t
   const doc = await Organizations.findOneAsync({ _id: organizationId });
 
   test.equal(doc.searchText, "test document 2 - remiaw - test contact - contact 1 - contact 2");
+});
+
+Tinytest.addAsync("WithSearch - searchText is set with deps", async function (test) {
+  const organizationId = await Organizations.insertAsync({ name: "Test Document", miaw: "remiaw" });
+  const contactId = await Contacts.insertAsync({ name: "Test Contact", organizationId });
+
+  await wait(100);
+
+  const organization = await Organizations.findOneAsync({ _id: organizationId });
+
+  test.equal(organization.searchText, "test document - remiaw -  - test contact");
 });

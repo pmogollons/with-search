@@ -1,12 +1,14 @@
 import get from "lodash.get";
 import { Mongo } from "meteor/mongo";
 
+import flattenObject from "./lib/flattenObject";
+
 
 const TEXT_SEPARATOR = " - ";
 
 Object.assign(Mongo.Collection.prototype, {
   withSearch: function (options) {
-    const { fields, index, hasLinks } = options;
+    const { fields, deps = [] } = options;
 
     this._searchFields = fields;
 
@@ -18,13 +20,11 @@ Object.assign(Mongo.Collection.prototype, {
       });
     }
 
-    if (index) {
-      this.createIndex({
-        searchText: "text",
-      });
-    }
+    this.createIndex({
+      searchText: "text",
+    });
 
-    if (!hasLinks) {
+    if (deps.length === 0) {
       this.onBeforeInsert(async ({ doc }) => {
         doc.searchText = generateSearchText({ doc, fields });
       });
@@ -45,13 +45,32 @@ Object.assign(Mongo.Collection.prototype, {
       fetchPrevious: true,
     });
 
+    if (deps.length > 0) {
+      deps.forEach((dep) => {
+        dep.collection.onInsert(async ({ doc }) => {
+          const flattenedDoc = Object.keys(flattenObject(dep.docFields))[0];
+
+          // TODO: We should try to use a more efficient way that reduces queries
+          await this.syncSearchTextFields({ _id: doc[flattenedDoc] });
+        }, {
+          docFields: dep.docFields,
+        });
+      });
+    }
+
     return this;
   },
 
-  syncSearchTextFields: async function () {
+  syncSearchTextFields: async function ({ _id }) {
     try {
+      const query = {};
+
+      if (_id) {
+        query._id = _id;
+      }
+
       const docs = await this.createQuery({
-        $filters: {},
+        $filters: query,
 
         _id: true,
         ...getDocFields(this._searchFields),
@@ -65,8 +84,6 @@ Object.assign(Mongo.Collection.prototype, {
       }));
 
       await this.rawCollection().bulkWrite(bulkOps);
-
-      console.log("Search text fields synced");
     } catch (error) {
       console.log(error);
     }
